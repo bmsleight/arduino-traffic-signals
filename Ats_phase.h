@@ -110,15 +110,19 @@ class Ats_phase {
     void setMinTimes(int phase_step, int min);
     void tick(int millseconds);
     void detect();
-    void demand();
+    void demand_set(unsigned char state);
+    unsigned char demand_return();
+    unsigned char state();
+    bool ran_min_green();
 
   private:
     /* Status of phase */
     unsigned char _type;
     unsigned char _state; // PHASE_GREEN 0, PHASE_RED 3 etc....
     unsigned char _demand; // DEMAND_NONE 0, DEMAND_GREEN 1, DEMAND_RED 2
-    int _time_on_green_milliseconds;
-    int _time_since_green_milliseconds;
+    unsigned long _time_on_green_milliseconds;
+    unsigned long _time_since_green_milliseconds;
+    unsigned long _time_on_current_state_milliseconds;
     int _min_times[PHASE_STEPS];
     /* Wiring to pins */
     int _aspect_pins[3] ; // RAG
