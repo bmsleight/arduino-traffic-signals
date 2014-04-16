@@ -11,17 +11,17 @@ Ats_phase phases[TOTAL_PHASES];
 void setup() {                
   Serial.begin(9600);    
 
-  phases[1].configure(TRAFFIC_JUNCTION, 14,15,16,0,0); // No Demand light (wait)
-  phases[2].configure(PED_JUNCTION, 7,0,8,9,10);  //No Amber
-  phases[2].setMinTimes(PHASE_GREEN,5);  
-  phases[2].setMinTimes(PHASE_BLACKOUT,4);  
-  phases[1].demand_set(DEMAND_GREEN);
+  phases[0].configure(TRAFFIC_JUNCTION, 14,15,16,0,0); // No Demand light (wait)
+  phases[1].configure(PED_JUNCTION, 7,0,8,9,10);  //No Amber
+  phases[1].setMinTimes(PHASE_GREEN,5);  
+  phases[1].setMinTimes(PHASE_BLACKOUT,4);  
+  phases[0].demand_set(DEMAND_GREEN);
   phases[1].demand_set(DEMAND_RED);  
 }
 
 void loop() {
   interupt_tick();
-  decide_movements();
+//  decide_movements();
   delay (1000);
 /*  interupt_tick();
   delay (100);
@@ -43,6 +43,8 @@ void interupt_demands() {
 void interupt_tick()
 {
   for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
+    Serial.print("Phase : ");
+    Serial.println(p);
     phases[p].tick(100);
   }
 }

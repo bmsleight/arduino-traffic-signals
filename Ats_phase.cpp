@@ -38,10 +38,17 @@ void Ats_phase::configure(unsigned char type, int red, int amber, int green, int
     pinMode(_detector_pin, INPUT);   
   }
 
+  Serial.print("Configure");
+  Serial.print(_state);
+  Serial.println(" ");
+
 }
 
 void Ats_phase::setMinTimes(int phase_step, int min) {
   _min_times[phase_step] = min; // Need to cheak not bellow minimum.
+  Serial.print("Min times");
+  Serial.print(_state);
+  Serial.println(" ");
 }
 
 void Ats_phase::demand_set(unsigned char state)  {
@@ -49,6 +56,7 @@ void Ats_phase::demand_set(unsigned char state)  {
   // too hard at the moment to set everythign demand and then fight...
   // TO DO!
   _demand = state;
+
 }
 
 
@@ -85,6 +93,11 @@ void Ats_phase::detect()  {
 
 
 void Ats_phase::tick(int millseconds) {
+
+  Serial.print("Start ");
+  Serial.print(_state);
+  Serial.println("_");
+
   /* TICKS */
   if (_state == PHASE_GREEN) {
     _time_on_green_milliseconds = _time_on_green_milliseconds + millseconds;
@@ -99,8 +112,8 @@ void Ats_phase::tick(int millseconds) {
   // Allowed moves handled ...
   /* TOCKS */
   Serial.print("tick ");
-  Serial.println("_");
-  Serial.println(_state);
+  Serial.print("_");
+  Serial.print(_state);
   Serial.println("_");
 
   if ((_state == PHASE_GREEN) && (_demand == DEMAND_RED)) {
