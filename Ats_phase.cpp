@@ -46,9 +46,6 @@ void Ats_phase::configure(unsigned char type, int red, int amber, int green, int
 
 void Ats_phase::setMinTimes(int phase_step, int min) {
   _min_times[phase_step] = min; // Need to cheak not bellow minimum.
-  Serial.print("Min times");
-  Serial.print(_state);
-  Serial.println(" ");
 }
 
 void Ats_phase::demand_set(unsigned char state)  {
@@ -71,7 +68,7 @@ unsigned char Ats_phase::state(){
 }
 
 bool Ats_phase::ran_min_green() {
-  if((_time_since_green_milliseconds/1000)>=_min_times[PHASE_GREEN]) {
+  if((_time_on_green_milliseconds/1000)>=_min_times[PHASE_GREEN]) {
     return true;
   }
   else {
@@ -93,11 +90,6 @@ void Ats_phase::detect()  {
 
 
 void Ats_phase::tick(int millseconds) {
-
-  Serial.print("Start ");
-  Serial.print(_state);
-  Serial.println("_");
-
   /* TICKS */
   if (_state == PHASE_GREEN) {
     _time_on_green_milliseconds = _time_on_green_milliseconds + millseconds;
@@ -111,14 +103,10 @@ void Ats_phase::tick(int millseconds) {
   // Intergreens handled elewhere (for now)
   // Allowed moves handled ...
   /* TOCKS */
-  Serial.print("tick ");
-  Serial.print("_");
-  Serial.print(_state);
-  Serial.println("_");
-
   if ((_state == PHASE_GREEN) && (_demand == DEMAND_RED)) {
     // On Green want Red
     if (ran_min_green()) {
+      Serial.println("*.");
       _state = PHASE_POST_GREEN;
       _demand = DEMAND_NONE;
       _time_since_green_milliseconds = 0;
@@ -128,7 +116,7 @@ void Ats_phase::tick(int millseconds) {
   if ((_state == PHASE_RED) && (_demand == DEMAND_GREEN)) {
     // On Red want Green
     if (true) { // No min red but reflects above code
-      Serial.print("++");
+      Serial.println("+.");
       _state = PHASE_POST_RED;
       _demand = DEMAND_NONE;
       _time_on_current_state_milliseconds = 0;
@@ -138,10 +126,9 @@ void Ats_phase::tick(int millseconds) {
   if ((_state != PHASE_GREEN) && (_state != PHASE_RED)) {
     // Have we done the min time for the part of the Phase state ?
     if ((_time_on_current_state_milliseconds/1000) >= _min_times[_state]) {
-
+      Serial.println("&.");
       // _state has PHASE_STEPS 0..5
       _state ++;
-      Serial.print("==");
       if (_state >= PHASE_STEPS) {
         _state = 0;
       }

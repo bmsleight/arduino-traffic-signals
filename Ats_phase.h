@@ -99,6 +99,7 @@ static unsigned char phaseTypes[PHASE_TYPES][PHASE_STEPS][OUTPUT_PER_PHASE]=
     {1, 0, 0, 0}, // PHASE_RED
     {1, 0, 0, 0}, // PHASE_POST_RED
     {1, 0, 0, 0}  // PHASE_PRE_GREEN
+    // TO DO!
   }
 };
 

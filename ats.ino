@@ -15,14 +15,46 @@ void setup() {
   phases[1].configure(PED_JUNCTION, 7,0,8,9,10);  //No Amber
   phases[1].setMinTimes(PHASE_GREEN,5);  
   phases[1].setMinTimes(PHASE_BLACKOUT,4);  
+  
+  // In ther futre need to treat intergreen correctly
+  phases[0].setMinTimes(PHASE_POST_RED,6);  // Crude intergreen
+  phases[1].setMinTimes(PHASE_POST_RED,3);  // Crude intergreen
+  phases[1].setMinTimes(PHASE_PRE_GREEN,2);  // Crude intergreen
+  
   phases[0].demand_set(DEMAND_GREEN);
   phases[1].demand_set(DEMAND_RED);  
 }
 
 void loop() {
-  interupt_tick();
-//  decide_movements();
-  delay (1000);
+  for (unsigned char l = 0; l < 30; l++) {
+    Serial.print("Phase 0 :");
+    Serial.print(phases[0].state() );
+    Serial.print(" Phase 1 :");
+    Serial.println(phases[1].state() );
+
+    interupt_tick();
+    interupt_tick();
+ 
+    interupt_tick();
+    interupt_tick();
+
+    interupt_tick();
+    interupt_tick();
+
+    interupt_tick();
+    interupt_tick();
+
+    interupt_tick();
+    interupt_tick();
+
+    decide_movements();
+  }
+
+  Serial.println("Flip demand");
+  phases[1].demand_set(DEMAND_GREEN);
+  phases[0].demand_set(DEMAND_RED); 
+
+
 /*  interupt_tick();
   delay (100);
   interupt_tick();
@@ -42,9 +74,9 @@ void interupt_demands() {
   
 void interupt_tick()
 {
+  delay (100);
+
   for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
-    Serial.print("Phase : ");
-    Serial.println(p);
     phases[p].tick(100);
   }
 }
@@ -59,15 +91,15 @@ void decide_movements() {
   // Want stages, conflict, intergreen later....
   
   // Ped stage run to min.
-  if ((phases[2].state() == PHASE_GREEN) && (phases[2].ran_min_green())) {
+  if ((phases[1].state() == PHASE_GREEN) && (phases[1].ran_min_green())) {
     Serial.print("Ped stage ran to min");
-    phases[2].demand_set(DEMAND_RED);
-    phases[1].demand_set(DEMAND_GREEN);    
+    phases[1].demand_set(DEMAND_RED);
+    phases[0].demand_set(DEMAND_GREEN);    
   }
   // Vehicle has run min and ped demanded
-  if ((phases[1].state() == PHASE_GREEN) && (phases[1].ran_min_green()) && (phases[2].demand_return() == DEMAND_GREEN)) {
+  if ((phases[0].state() == PHASE_GREEN) && (phases[0].ran_min_green()) && (phases[1].demand_return() == DEMAND_GREEN)) {
     Serial.print("Vehicle stage ran to min");
-    phases[1].demand_set(DEMAND_RED);
+    phases[0].demand_set(DEMAND_RED);
   }
 
 
