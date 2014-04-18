@@ -23,7 +23,7 @@
 
 /* Set up the volatile counters for ticks and flashing on/off */
 volatile long tick_count = 0;
-volatile bool flash = true; // lets just read the pin?
+volatile bool flash = true;
 #define HEARTBEAT_PIN 13
 
 /* define the phases  */
@@ -33,8 +33,8 @@ Ats_phase phases[TOTAL_PHASES];
 
 
 void setup() {
-  phases[0].configure(TRAFFIC_JUNCTION, 14,15,16,0,0); // 0,0 No Demand light (wait), no Detector
-  phases[1].configure(PED_JUNCTION, 7,0,8,9,10);  // 0 - No Amber Pin
+  phases[0].configure(TRAFFIC_JUNCTION, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
+  phases[1].configure(PED_JUNCTION, 5,0,6,7,12);  // 0 - No Amber Pin
   phases[1].setMinTimes(PHASE_GREEN,5);
   phases[1].setMinTimes(PHASE_BLACKOUT,4);
   
@@ -60,6 +60,11 @@ void loop() {
     Serial.print(phases[0].state() );
     Serial.print(" Phase 1 :");
     Serial.println(phases[1].state() );
+    Serial.print(" Phase 0  Demand:");
+    Serial.println(phases[0].demand_return() );
+    Serial.print(" Phase 1  Demand:");
+    Serial.println(phases[1].demand_return() );
+    // demand_return()  
     delay(1000);
   }
 
@@ -94,9 +99,10 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
 void heartbeat() {
   // Add to tick and flip (flash) the HEARTBEAT_PIN after FLASH_AFTER_HEARTBEATS ticks
   tick_count++;
+  flash = !flash;
   if (tick_count>FLASH_AFTER_HEARTBEATS) {
     tick_count = 0;
-    digitalWrite(HEARTBEAT_PIN, digitalRead(HEARTBEAT_PIN) ^ 1);
+    digitalWrite(HEARTBEAT_PIN, flash);
   }
 }
 
@@ -159,3 +165,4 @@ void setup_interrupts()  {
   interrupts();             // enable all interrupts 
 }
 
+  

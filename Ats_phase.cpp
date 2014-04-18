@@ -31,38 +31,40 @@ void Ats_phase::configure(unsigned char type, int red, int amber, int green, int
   _type = type;
   _state = PHASE_RED; // Start on RED
   for (unsigned char ps = 0; ps < PHASE_STEPS; ps++) {
-   // dont like 4 as the magic number - but it the where the min time is store.
+   // dont like 3 as the magic number - but it the where the min time is stored.
    // Use the default setting from phaseTypes configuration 
     _min_times[ps] = phaseTypes[type][ps][3]; 
   }
+  _time_on_green_milliseconds = 0;
+  _time_on_current_state_milliseconds = 0;
+  _time_since_green_milliseconds = 0;
+  _demand = DEMAND_NONE;
+  
+  /* Set up pins */
   _aspect_pins[0] = red;
   _aspect_pins[1] = amber;
   _aspect_pins[2] = green;
   _demand_green_pin = demand;
   _detector_pin = detector_pin;
-
-  _time_on_green_milliseconds = 0;
-  _time_on_current_state_milliseconds = 0;
-  _time_since_green_milliseconds = 0;
-  _demand = DEMAND_NONE;
-
-  /* Set up pins */
   for (unsigned char pins = 0; pins < 3; pins++) {
-    if (_aspect_pins[pins] !=0) {
-      pinMode(_aspect_pins[pins], OUTPUT); 
-    }
+    _set_pin_mode(_aspect_pins[pins], OUTPUT);
   }
-  if (_demand_green_pin !=0) {
-    pinMode(_demand_green_pin, OUTPUT);   
-  }
-  if (_detector_pin !=0) {
-    pinMode(_detector_pin, INPUT);   
-  }
+  _set_pin_mode(_demand_green_pin, OUTPUT);   
+  _set_pin_mode(_detector_pin, INPUT_PULLUP);   
 
-  Serial.print("Configure");
+  /* Debugging via serial */
+  Serial.print("Configure ");
   Serial.print(_state);
   Serial.println(" ");
 
+}
+
+
+void Ats_phase::_set_pin_mode(int p, int mode) {
+  // Set mode if not zero
+  if (p !=0) {
+    pinMode(p, mode);
+  }
 }
 
 void Ats_phase::setMinTimes(int phase_step, int min) {
@@ -98,13 +100,13 @@ bool Ats_phase::ran_min_green() {
 }
 
 void Ats_phase::detect()  {
-  unsigned char detection;
   // Can not be detected if aleady at green
-  // or aleady Demanded
   // or no demand pin to read from
-  if ((_state != PHASE_GREEN) && (_demand != DEMAND_GREEN) && (_demand_green_pin !=0) ) {
-    if(digitalRead(_demand_green_pin)) {
+  if ((_state != PHASE_GREEN) && (_demand_green_pin !=0) ) {
+    if(digitalRead(_demand_green_pin) == LOW) {
       _demand = DEMAND_GREEN;
+      /* Debugging via serial */
+      Serial.print("Very demanding");
     }
   }
 }
@@ -117,6 +119,7 @@ void Ats_phase::tick(int millseconds) {
   }
   else {
     _time_since_green_milliseconds = _time_since_green_milliseconds + millseconds;
+    _time_on_green_milliseconds = 0;
   }
   _time_on_current_state_milliseconds = _time_on_current_state_milliseconds + millseconds;
 
@@ -156,9 +159,44 @@ void Ats_phase::tick(int millseconds) {
       _time_on_current_state_milliseconds = 0;
     }
   }
-
-  /* Reset clocks */
-
+  
+  _set_outputs();
 
 }
 
+
+void Ats_phase::_set_outputs() {
+  unsigned char aspect_state;
+  for (unsigned char pins = 0; pins < 3; pins++) {
+    aspect_state = phaseTypes[_type][_state][pins];
+    _set_pin_output(_aspect_pins[pins], aspect_state);
+  }
+  if (_demand == DEMAND_GREEN) {
+    _set_pin_output(_demand_green_pin, A_ON___);
+    Serial.print("n");
+  }
+  else {
+    _set_pin_output(_demand_green_pin, A_OFF__);
+//    Serial.print("m");
+  }
+}
+
+
+void Ats_phase::_set_pin_output(int p, unsigned char aspect_state) {
+  if (p !=0) {
+    switch (aspect_state) {
+      case A_ON___:
+        digitalWrite(p, HIGH);
+        break;
+      case A_FLASH:
+        digitalWrite(p, HIGH);
+        break;
+      case A_OFF__:
+        digitalWrite(p, LOW);
+        break;
+
+//    Serial.println("Insert demand");
+    }
+
+  }
+}

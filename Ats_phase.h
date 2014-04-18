@@ -47,6 +47,7 @@
 
 /* Phase types */
 #define PHASE_TYPES 4
+/* which of of type ... */
 #define TRAFFIC_PELICAN 0
 #define PED_PELICAN 1
 #define TRAFFIC_JUNCTION 2
@@ -61,50 +62,59 @@
 
 
 
-// 0 = Off 1 = On 2 = Flashing
 #define FLASH_AFTER_HEARTBEATS 40  // Makes 75 cycles per minute
 // compare match register ((16MHz÷256)÷100Hz )
 #define HEATBEAT 625
 #define HEATBEAT_MILLS 10
 
+// 0 = Off 1 = On 2 = Flashing
+
+#define A_OFF__ 0
+#define A_ON___ 1
+#define A_FLASH 2
+
 static unsigned char phaseTypes[PHASE_TYPES][PHASE_STEPS][OUTPUT_PER_PHASE]=
 {
-  { // TRAFFIC_PELICAN 0
-    // R A G
-    {0, 0, 1, 7}, // PHASE_GREEN
-    {0, 0, 1, 0}, // PHASE_POST_GREEN
-    {0, 1, 0, 3}, // PHASE_PRE_RED
-    {1, 0, 0, 0}, // PHASE_RED
-    {0, 2, 0, 0}, // PHASE_POST_RED
-    {0, 2, 0, 0}  // PHASE_PRE_GREEN
+  // Type of signal
+  // State, State, State, Min time
+  // e.g. When at green for Traffic Phase at Pelican
+  // Red Aspect off, Amber off, Green On, Minimum 7 Seconds
+ 
+  { // TRAFFIC_PELICAN 
+    // Red      AMBER   GREEN
+    {A_OFF__, A_OFF__, A_ON___, 7}, // PHASE_GREEN
+    {A_OFF__, A_OFF__, A_ON___, 0}, // PHASE_POST_GREEN
+    {A_OFF__, A_ON___, A_OFF__, 3}, // PHASE_PRE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_RED
+    {A_OFF__, A_FLASH, A_OFF__, 0}, // PHASE_POST_RED
+    {A_OFF__, A_FLASH, A_OFF__, 0}  // PHASE_PRE_GREEN
   },
-  { // PED_PELICAN 1
-    // Red Figure - Green Figure
-    {0, 0, 1, 5}, // PHASE_GREEN
-    {0, 0, 2, 0}, // PHASE_POST_GREEN
-    {1, 0, 0, 0}, // PHASE_PRE_RED
-    {1, 0, 0, 0}, // PHASE_RED
-    {1, 0, 0, 0}, // PHASE_POST_RED
-    {1, 0, 0, 0}  // PHASE_PRE_GREEN
+  { // PED_PELICAN 
+    //Red Fig    -      Green Fig
+    {A_OFF__, A_OFF__, A_ON___, 5}, // PHASE_GREEN
+    {A_OFF__, A_OFF__, A_FLASH, 0}, // PHASE_POST_GREEN
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_PRE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_POST_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}  // PHASE_PRE_GREEN
   },
-  { // TRAFFIC_JUNCTION 2
-    // R A G
-    {0, 0, 1, 7}, // PHASE_GREEN
-    {0, 0, 1, 0}, // PHASE_POST_GREEN
-    {0, 1, 0, 3}, // PHASE_PRE_RED
-    {1, 0, 0, 0}, // PHASE_RED
-    {1, 0, 0, 0}, // PHASE_POST_RED
-    {1, 1, 0, 2}  // PHASE_PRE_GREEN
+  { // TRAFFIC_JUNCTION 
+    // Red      AMBER   GREEN
+    {A_OFF__, A_OFF__, A_ON___, 7}, // PHASE_GREEN
+    {A_OFF__, A_OFF__, A_ON___, 0}, // PHASE_POST_GREEN
+    {A_OFF__, A_ON___, A_OFF__, 3}, // PHASE_PRE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_POST_RED
+    {A_ON___, A_ON___, A_OFF__, 2}  // PHASE_PRE_GREEN
   },
-  { // PED_JUNCTION 3
-    // Red Figure - Green Figure
-    {0, 0, 1, 5}, // PHASE_GREEN
-    {0, 0, 0, 0}, // PHASE_POST_GREEN
-    {0, 0, 0, 0}, // PHASE_PRE_RED
-    {1, 0, 0, 0}, // PHASE_RED
-    {1, 0, 0, 0}, // PHASE_POST_RED
-    {1, 0, 0, 0}  // PHASE_PRE_GREEN
-    // TO DO!
+  { // PED_JUNCTION 
+    //Red Fig    -      Green Fig
+    {A_OFF__, A_OFF__, A_ON___, 5}, // PHASE_GREEN
+    {A_OFF__, A_OFF__, A_OFF__, 5}, // PHASE_POST_GREEN
+    {A_OFF__, A_OFF__, A_OFF__, 0}, // PHASE_PRE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}, // PHASE_POST_RED
+    {A_ON___, A_OFF__, A_OFF__, 0}  // PHASE_PRE_GREEN
   }
 };
 
@@ -134,9 +144,34 @@ class Ats_phase {
     int _aspect_pins[3] ; // RAG
     int _demand_green_pin; // Used show a demand for green e.g. a wait
     int _detector_pin ; // The detector
+    void _set_pin_mode(int p, int mode);
+    void _set_pin_output(int p, unsigned char aspect_state);
 
+    void _set_outputs();
 };
 
 
 
+// I like to use a pull up resistor when I use a detector
+// There is one internal pull up resistor, but not in all libraries
+// Better than playing with AVR specific registers.
+//
+// http://forum.arduino.cc/index.php?PHPSESSID=24t2omb62n3krd4uv3v11o2jn0&topic=142041.msg1069480#msg1069480
+// Make INPUT_PULLUP backward compatiable and less AVR specific.
+//
+#ifndef INPUT_PULLUP
+#warning "Using  pinMode() INPUT_PULLUP AVR emulation"
+#define INPUT_PULLUP 0x2
+#define pinMode(_pin, _mode) _mypinMode(_pin, _mode)
+#define _mypinMode(_pin, _mode) \
+do                             \
+{                              \
+ pinMode(_pin, _mode);         \
+ if(_mode == INPUT_PULLUP)     \
+   digitalWrite(_pin, 1);       \
+}while(0)
+#endif
+
+
 #endif 
+
