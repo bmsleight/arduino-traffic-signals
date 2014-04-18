@@ -62,9 +62,9 @@
 
 
 // 0 = Off 1 = On 2 = Flashing
-#define FLASH_AFTER_HEARTBEATS 37
-// compare match register ((16MHz÷256)÷100Hz -1)
-#define HEATBEAT 624
+#define FLASH_AFTER_HEARTBEATS 40  // Makes 75 cycles per minute
+// compare match register ((16MHz÷256)÷100Hz )
+#define HEATBEAT 625
 #define HEATBEAT_MILLS 10
 
 static unsigned char phaseTypes[PHASE_TYPES][PHASE_STEPS][OUTPUT_PER_PHASE]=
