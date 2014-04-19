@@ -61,12 +61,15 @@
 #define PHASE_CHANGE_TO_RED 2
 
 
-// Can runs as low as 10ms, but that does not give time for 
-//  debuggin via the serial port at 9,600 Baud.
-#define FLASH_AFTER_HEARTBEATS 4  // Makes 75 cycles per minute
-// compare match register ((16MHz÷256)÷10Hz )
-#define HEATBEAT 6250
-#define HEATBEAT_MILLS 100
+// Can runs as low as 10ms, but that may not give time for 
+//  debugging via the serial port at 9,600 Baud.
+#define HEARTBEAT_MILLS 100
+// compare match register HEARTBEAT = (16MHz/256)*(HEARTBEAT_MILLS/1000) 
+#define HEARTBEAT 6250
+#define FLASH_AFTER_HEARTBEATS 4  
+// 60 /2 (on and off) = 30
+// 30 / ( FLASH_AFTER_HEARTBEATS * HEARTBEAT_MILLS/1000)
+// Makes 75 cycles per minute
 
 // 0 = Off 1 = On 2 = Flashing
 
@@ -132,6 +135,7 @@ class Ats_phase {
     unsigned char state();
     bool ran_min_green();
     bool demanded();
+    bool debug_to_serial;
     void serial_debug(unsigned char p);
 
   private:
@@ -144,6 +148,7 @@ class Ats_phase {
     unsigned long _time_on_current_state_milliseconds;
     int _min_times[PHASE_STEPS];
     bool _demand;
+
     /* Wiring to pins */
     int _aspect_pins[3] ; // RAG
     int _demand_green_pin; // Used show a demand for green e.g. a wait

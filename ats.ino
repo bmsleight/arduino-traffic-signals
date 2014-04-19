@@ -25,14 +25,31 @@ volatile long tick_count = 0;
 volatile bool flash = true;
 #define HEARTBEAT_PIN 13
 
+//#define DEBUG_TO_SERIAL_BAUD_RATE 9600
+#define DEBUG_TO_SERIAL_BAUD_RATE 0
+
 /* define the phases  */
 #define TOTAL_PHASES 2
 Ats_phase phases[TOTAL_PHASES];
 
 
 void setup() {
-  phases[0].configure(TRAFFIC_JUNCTION, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
-  phases[1].configure(PED_JUNCTION, 5,0,6,7,12);  // 0 - No Amber Pin
+  if (DEBUG_TO_SERIAL_BAUD_RATE) {
+    Serial.begin(DEBUG_TO_SERIAL_BAUD_RATE);
+    phases[0].debug_to_serial = true;
+    phases[1].debug_to_serial = true;
+  }
+
+  // Set PED or Junction when switching on by holding Push Button on pin 12
+  if (digitalRead(12)) { 
+    phases[0].configure(TRAFFIC_PELICAN, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
+    phases[1].configure(PED_PELICAN, 5,0,6,7,12);  // 0 - No Amber Pin
+  }
+  else {
+    phases[0].configure(TRAFFIC_JUNCTION, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
+    phases[1].configure(PED_JUNCTION, 5,0,6,7,12);  // 0 - No Amber Pin
+  }
+  
   phases[1].setMinTimes(PHASE_GREEN,5);
   phases[1].setMinTimes(PHASE_BLACKOUT,4);
   
@@ -41,39 +58,27 @@ void setup() {
   phases[1].setMinTimes(PHASE_POST_RED,3);  // Crude intergreen
   phases[1].setMinTimes(PHASE_PRE_GREEN,2);  // Crude intergreen
   
-  // Insert a change to pedestrain phase
+  // Insert a change to pedestrain phase on start-up
   phases[0].phase_change_set(PHASE_CHANGE_TO_RED);
   phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);  
 
   setup_interrupts();
-  Serial.begin(19200);
   pinMode(HEARTBEAT_PIN, OUTPUT);
 
 }
 
 
 void loop() {
-  for (unsigned char l = 0; l < 30; l++) {
-
+  if (DEBUG_TO_SERIAL_BAUD_RATE) {  
     phases[0].serial_debug(0);
     phases[1].serial_debug(1);
     Serial.println(" ");
     delay(1000);
-  }
-
-//  Serial.println("Insert demand");
-  phases[0].phase_change_set(PHASE_CHANGE_TO_RED); 
-  phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);
-}
-
-void interupt_demands() {
-  for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
-    phases[p].detect();
-  }
+  } 
 }
 
 
-// This is run every (HEATBEAT_MILLS) ms
+// This is run every (HEARTBEAT_MILLS) ms
 ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
 {
   // Add to tick and flip (flash) the HEARTBEAT_PIN after FLASH_AFTER_HEARTBEATS ticks
@@ -84,8 +89,7 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
   // increments time counter for time on current state - e.g. Green min times.
   phase_changes();
   
-  // Decide if a phase should from mov Red/Green to Green/Red
-  // If on Red with a demand to green, go to Red-Amber
+  // Decide if a phase should move from Red/Green to Green/Red
   decide_movements();
   
   // Demands ?
@@ -95,18 +99,18 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
 void heartbeat() {
   // Add to tick and flip (flash) the HEARTBEAT_PIN after FLASH_AFTER_HEARTBEATS ticks
   tick_count++;
-  flash = !flash;
   if (tick_count>FLASH_AFTER_HEARTBEATS) {
     tick_count = 0;
+    flash = !flash;
     digitalWrite(HEARTBEAT_PIN, flash);
   }
 }
 
 void phase_changes() {
   // Deal with each phase - stay on Red/Green or move to Red/Green
-  // increments time counter for time on current state - e.g. Green min times by HEATBEAT_MILLS
+  // increments time counter for time on current state - e.g. Green min times by HEARTBEAT_MILLS
   for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
-    phases[p].tick(HEATBEAT_MILLS);
+    phases[p].tick(HEARTBEAT_MILLS);
   }
 }  
 
@@ -123,19 +127,24 @@ void decide_movements() {
   
   // Ped stage run to min.
   if ((phases[1].state() == PHASE_GREEN) && (phases[1].ran_min_green())) {
-    Serial.println("Ped stage ran to min");
+    // Serial.println("Ped stage ran to min");
     phases[1].phase_change_set(PHASE_CHANGE_TO_RED);
     phases[0].phase_change_set(PHASE_CHANGE_TO_GREEN);    
   }
   // Vehicle has run min and ped demanded
   if ((phases[0].state() == PHASE_GREEN) && (phases[0].ran_min_green()) && (phases[1].demanded()) ) {
-    Serial.println("Vehicle stage ran to min");
+    // Serial.println("Vehicle stage ran to min");
     phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);
     phases[0].phase_change_set(PHASE_CHANGE_TO_RED);
   }
 
 }
 
+void interupt_demands() {
+  for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
+    phases[p].detect();
+  }
+}
 
 
 void setup_interrupts()  {
@@ -147,19 +156,18 @@ void setup_interrupts()  {
   TCCR1B = 0;               // in the registers
   TCNT1  = 0;
                             // Clock is 16MHz
-                            // Target time is 10ms or 100Hz
   TCCR1B |= (1 << CS12);    // Set 256 prescaler - See datasheet
-  OCR1A = HEATBEAT;         // compare match register (16MHz÷256)÷100Hz
-                            // See Ats_phase.h - #define HEATBEAT 625 
+                            // Target time is t = (16MHz÷256) * HEARTBEAT 
+  OCR1A = HEARTBEAT;         // compare match register (16MHz÷256)*target_time_in_s
+                            // See Ats_phase.h for #define HEARTBEAT 
                             //
   TCCR1B |= (1 << WGM12);   // CTC mode                            
                             // CTC mode. Clear timer on compare match. 
                             // When the timer counter reaches the compare 
                             // match register, the timer will be cleared
-                            // So once reaches 625, the ISR(TIMER1_COMPA_vect)
+                            // So once reaches HEARTBEAT counts, the ISR(TIMER1_COMPA_vect)
                             // will be run and the the counter will reset
   TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
   interrupts();             // enable all interrupts 
 }
 
-  
