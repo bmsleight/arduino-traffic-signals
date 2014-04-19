@@ -29,39 +29,8 @@
 #include "WProgram.h"
 #endif
 
-/* Define some Globals use for a phase */
-
-/* Phase Types */
-/* Each phase type will go in the order .... */
-
-#define PHASE_GREEN 0
-#define PHASE_POST_GREEN 1
-#define PHASE_BLACKOUT 1
-#define PHASE_PRE_RED 2
-#define PHASE_RED 3
-#define PHASE_POST_RED 4
-#define PHASE_PRE_GREEN 5
-#define PHASE_STEPS 6
-//#define OUTPUT_PER_PHASE 3
-#define OUTPUT_PER_PHASE 4 // As going to store min time at end
-
-/* Phase types */
-#define PHASE_TYPES 4
-/* which of of type ... */
-#define TRAFFIC_PELICAN 0
-#define PED_PELICAN 1
-#define TRAFFIC_JUNCTION 2
-#define PED_JUNCTION 3
-
-#define ASPECTS 3
-
-/* Phase_Change */
-#define PHASE_CHANGE_NONE 0
-#define PHASE_CHANGE_TO_GREEN 1
-#define PHASE_CHANGE_TO_RED 2
-
-
-// Can runs as low as 10ms, but that may not give time for 
+/* Timing for interrupts */
+// Can run as low as 10ms, but that may not give time for 
 //  debugging via the serial port at 9,600 Baud.
 #define HEARTBEAT_MILLS 100
 // compare match register HEARTBEAT = (16MHz/256)*(HEARTBEAT_MILLS/1000) 
@@ -71,11 +40,41 @@
 // 30 / ( FLASH_AFTER_HEARTBEATS * HEARTBEAT_MILLS/1000)
 // Makes 75 cycles per minute
 
+/* Define some Globals use for a phase */
+
+/* Phase Types */
+/* Each phase type will go in the order .... */
+
+#define PHASE_GREEN 0
+#define PHASE_POST_GREEN 1
+#define PHASE_BLACKOUT 1 // Same as POST_GREEN - but easier for reading
+#define PHASE_PRE_RED 2
+#define PHASE_RED 3
+#define PHASE_POST_RED 4
+#define PHASE_PRE_GREEN 5
+#define PHASE_STEPS 6
+//#define OUTPUT_PER_PHASE 3
+#define OUTPUT_PER_PHASE 4 // As going to store min time at end
+
+/* Phase_Change */
+#define PHASE_CHANGE_NONE 0
+#define PHASE_CHANGE_TO_GREEN 1
+#define PHASE_CHANGE_TO_RED 2
+
+
 // 0 = Off 1 = On 2 = Flashing
 
 #define A_OFF__ 0
 #define A_ON___ 1
 #define A_FLASH 2
+
+/* Phase types */
+#define PHASE_TYPES 4
+/* which of type ... */
+#define TRAFFIC_PELICAN 0
+#define PED_PELICAN 1
+#define TRAFFIC_JUNCTION 2
+#define PED_JUNCTION 3
 
 static unsigned char phaseTypes[PHASE_TYPES][PHASE_STEPS][OUTPUT_PER_PHASE]=
 {
@@ -158,30 +157,6 @@ class Ats_phase {
 
     void _set_outputs();
 };
-
-
-
-// I like to use a pull up resistor when I use a detector
-// There is one internal pull up resistor, but not in all libraries
-// Better than playing with AVR specific registers.
-//
-// http://forum.arduino.cc/index.php?PHPSESSID=24t2omb62n3krd4uv3v11o2jn0&topic=142041.msg1069480#msg1069480
-// Make INPUT_PULLUP backward compatiable and less AVR specific.
-//
-/*
-#ifndef INPUT_PULLUP
-#warning "Using  pinMode() INPUT_PULLUP AVR emulation"
-#define INPUT_PULLUP 0x2
-#define pinMode(_pin, _mode) _mypinMode(_pin, _mode)
-#define _mypinMode(_pin, _mode) \
-do                             \
-{                              \
- pinMode(_pin, _mode);         \
- if(_mode == INPUT_PULLUP)     \
-   digitalWrite(_pin, 1);       \
-}while(0)
-#endif
-*/
 
 #endif 
 
