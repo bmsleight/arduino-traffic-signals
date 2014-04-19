@@ -55,17 +55,18 @@
 
 #define ASPECTS 3
 
-/* Demands */
-#define DEMAND_NONE 0
-#define DEMAND_GREEN 1
-#define DEMAND_RED 2
+/* Phase_Change */
+#define PHASE_CHANGE_NONE 0
+#define PHASE_CHANGE_TO_GREEN 1
+#define PHASE_CHANGE_TO_RED 2
 
 
-
-#define FLASH_AFTER_HEARTBEATS 40  // Makes 75 cycles per minute
-// compare match register ((16MHz÷256)÷100Hz )
-#define HEATBEAT 625
-#define HEATBEAT_MILLS 10
+// Can runs as low as 10ms, but that does not give time for 
+//  debuggin via the serial port at 9,600 Baud.
+#define FLASH_AFTER_HEARTBEATS 4  // Makes 75 cycles per minute
+// compare match register ((16MHz÷256)÷10Hz )
+#define HEATBEAT 6250
+#define HEATBEAT_MILLS 100
 
 // 0 = Off 1 = On 2 = Flashing
 
@@ -122,24 +123,27 @@ class Ats_phase {
   public:
     Ats_phase();
     ~Ats_phase();
-    void configure(unsigned char type, int red, int amber, int green, int demand, int detector_pin);
+    void configure(unsigned char type, int red, int amber, int green, int demand_pin, int detector_pin);
     void setMinTimes(int phase_step, int min);
     void tick(int millseconds);
     void detect();
-    void demand_set(unsigned char state);
-    unsigned char demand_return();
+    void phase_change_set(unsigned char state);
+    unsigned char phase_change_return();
     unsigned char state();
     bool ran_min_green();
+    bool demanded();
+    void serial_debug(unsigned char p);
 
   private:
     /* Status of phase */
     unsigned char _type;
     unsigned char _state; // PHASE_GREEN 0, PHASE_RED 3 etc....
-    unsigned char _demand; // DEMAND_NONE 0, DEMAND_GREEN 1, DEMAND_RED 2
+    unsigned char _phase_change; // PHASE_CHANGE_NONE 0, PHASE_CHANGE_TO_GREEN 1, PHASE_CHANGE_TO_GREEN_RED 2
     unsigned long _time_on_green_milliseconds;
     unsigned long _time_since_green_milliseconds;
     unsigned long _time_on_current_state_milliseconds;
     int _min_times[PHASE_STEPS];
+    bool _demand;
     /* Wiring to pins */
     int _aspect_pins[3] ; // RAG
     int _demand_green_pin; // Used show a demand for green e.g. a wait
@@ -159,6 +163,7 @@ class Ats_phase {
 // http://forum.arduino.cc/index.php?PHPSESSID=24t2omb62n3krd4uv3v11o2jn0&topic=142041.msg1069480#msg1069480
 // Make INPUT_PULLUP backward compatiable and less AVR specific.
 //
+/*
 #ifndef INPUT_PULLUP
 #warning "Using  pinMode() INPUT_PULLUP AVR emulation"
 #define INPUT_PULLUP 0x2
@@ -171,7 +176,7 @@ do                             \
    digitalWrite(_pin, 1);       \
 }while(0)
 #endif
-
+*/
 
 #endif 
 

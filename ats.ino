@@ -21,7 +21,6 @@
  
 #include <Ats_phase.h>
 
-/* Set up the volatile counters for ticks and flashing on/off */
 volatile long tick_count = 0;
 volatile bool flash = true;
 #define HEARTBEAT_PIN 13
@@ -29,7 +28,6 @@ volatile bool flash = true;
 /* define the phases  */
 #define TOTAL_PHASES 2
 Ats_phase phases[TOTAL_PHASES];
-
 
 
 void setup() {
@@ -43,12 +41,12 @@ void setup() {
   phases[1].setMinTimes(PHASE_POST_RED,3);  // Crude intergreen
   phases[1].setMinTimes(PHASE_PRE_GREEN,2);  // Crude intergreen
   
-  // Insert a starting demand
-  phases[0].demand_set(DEMAND_RED);
-  phases[1].demand_set(DEMAND_GREEN);  
+  // Insert a change to pedestrain phase
+  phases[0].phase_change_set(PHASE_CHANGE_TO_RED);
+  phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);  
 
   setup_interrupts();
-  Serial.begin(9600);
+  Serial.begin(19200);
   pinMode(HEARTBEAT_PIN, OUTPUT);
 
 }
@@ -56,21 +54,16 @@ void setup() {
 
 void loop() {
   for (unsigned char l = 0; l < 30; l++) {
-    Serial.print("Phase 0 :");
-    Serial.print(phases[0].state() );
-    Serial.print(" Phase 1 :");
-    Serial.println(phases[1].state() );
-    Serial.print(" Phase 0  Demand:");
-    Serial.println(phases[0].demand_return() );
-    Serial.print(" Phase 1  Demand:");
-    Serial.println(phases[1].demand_return() );
-    // demand_return()  
+
+    phases[0].serial_debug(0);
+    phases[1].serial_debug(1);
+    Serial.println(" ");
     delay(1000);
   }
 
-  Serial.println("Insert demand");
-  phases[0].demand_set(DEMAND_RED); 
-  phases[1].demand_set(DEMAND_GREEN);
+//  Serial.println("Insert demand");
+  phases[0].phase_change_set(PHASE_CHANGE_TO_RED); 
+  phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);
 }
 
 void interupt_demands() {
@@ -94,6 +87,9 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
   // Decide if a phase should from mov Red/Green to Green/Red
   // If on Red with a demand to green, go to Red-Amber
   decide_movements();
+  
+  // Demands ?
+  interupt_demands();
 }
 
 void heartbeat() {
@@ -128,13 +124,14 @@ void decide_movements() {
   // Ped stage run to min.
   if ((phases[1].state() == PHASE_GREEN) && (phases[1].ran_min_green())) {
     Serial.println("Ped stage ran to min");
-    phases[1].demand_set(DEMAND_RED);
-    phases[0].demand_set(DEMAND_GREEN);    
+    phases[1].phase_change_set(PHASE_CHANGE_TO_RED);
+    phases[0].phase_change_set(PHASE_CHANGE_TO_GREEN);    
   }
   // Vehicle has run min and ped demanded
-  if ((phases[0].state() == PHASE_GREEN) && (phases[0].ran_min_green()) && (phases[1].demand_return() == DEMAND_GREEN)) {
+  if ((phases[0].state() == PHASE_GREEN) && (phases[0].ran_min_green()) && (phases[1].demanded()) ) {
     Serial.println("Vehicle stage ran to min");
-    phases[0].demand_set(DEMAND_RED);
+    phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);
+    phases[0].phase_change_set(PHASE_CHANGE_TO_RED);
   }
 
 }
