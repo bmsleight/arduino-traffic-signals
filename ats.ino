@@ -99,7 +99,7 @@ ISR(TIMER1_COMPA_vect)          // timer compare interrupt service routine
 void heartbeat() {
   // Add to tick and flip (flash) the HEARTBEAT_PIN after FLASH_AFTER_HEARTBEATS ticks
   tick_count++;
-  if (tick_count>FLASH_AFTER_HEARTBEATS) {
+  if (tick_count>=FLASH_AFTER_HEARTBEATS) {
     tick_count = 0;
     flash = !flash;
     digitalWrite(HEARTBEAT_PIN, flash);

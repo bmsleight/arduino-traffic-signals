@@ -32,13 +32,14 @@
 /* Timing for interrupts */
 // Can run as low as 10ms, but that may not give time for 
 //  debugging via the serial port at 9,600 Baud.
-#define HEARTBEAT_MILLS 100
+#define HEARTBEAT_MILLS 25
 // compare match register HEARTBEAT = (16MHz/256)*(HEARTBEAT_MILLS/1000) 
-#define HEARTBEAT 6250
-#define FLASH_AFTER_HEARTBEATS 4  
+#define HEARTBEAT 1562
+// Rounded down so actually - 0.024992
+#define FLASH_AFTER_HEARTBEATS 15  
 // 60 /2 (on and off) = 30
 // 30 / ( FLASH_AFTER_HEARTBEATS * HEARTBEAT_MILLS/1000)
-// Makes 75 cycles per minute
+// Makes 80.025608195 cycles per minute - almost exactly mid-range.
 
 /* Define some Globals use for a phase */
 
