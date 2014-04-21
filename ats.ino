@@ -24,6 +24,7 @@
 volatile long tick_count = 0;
 volatile bool flash = true;
 #define HEARTBEAT_PIN 13
+#define MODE_SELECT_PIN 12
 
 //#define DEBUG_TO_SERIAL_BAUD_RATE 9600
 #define DEBUG_TO_SERIAL_BAUD_RATE 0
@@ -41,7 +42,11 @@ void setup() {
   }
 
   // Set PED or Junction when switching on by holding Push Button on pin 12
-  if (digitalRead(12)) { 
+  // Quick select
+  pinMode(MODE_SELECT_PIN, INPUT);
+  digitalWrite(MODE_SELECT_PIN, HIGH);
+  delay(1000);
+  if (digitalRead(MODE_SELECT_PIN)) { 
     phases[0].configure(TRAFFIC_PELICAN, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
     phases[1].configure(PED_PELICAN, 5,0,6,7,12);  // 0 - No Amber Pin
   }
