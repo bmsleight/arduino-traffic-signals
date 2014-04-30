@@ -34,7 +34,7 @@ Ats_phase::Ats_phase() {
 Ats_phase::~Ats_phase() {
 }
 
-void Ats_phase::configure(unsigned char type, int red, int amber, int green, int demand_pin, int detector_pin) {
+void Ats_phase::configure(unsigned char type, int red, int amber, int green, int demand_pin, int detector_pin, bool demand) {
   _type = type;
   // Use the default setting from phaseTypes configuration 
   for (unsigned char ps = 0; ps < PHASE_STEPS; ps++) {
@@ -48,6 +48,7 @@ void Ats_phase::configure(unsigned char type, int red, int amber, int green, int
   _aspect_pins[2] = green;
   _demand_green_pin = demand_pin;
   _detector_pin = detector_pin;
+  _demand = demand;
   for (unsigned char pins = 0; pins < 3; pins++) {
     _set_pin_mode(_aspect_pins[pins], OUTPUT);
   }
@@ -96,6 +97,13 @@ unsigned char Ats_phase::state(){
   // Dont want state to be public
   return _state;
 }
+
+void Ats_phase::state_set(unsigned char state){
+  // Dont want state to be public
+  _state = state;
+}
+
+
 
 bool Ats_phase::ran_min_green() {
   if((_time_on_green_milliseconds/1000)>=_min_times[PHASE_GREEN]) {

@@ -47,12 +47,12 @@ void setup() {
   digitalWrite(MODE_SELECT_PIN, HIGH);
   delay(1000);
   if (digitalRead(MODE_SELECT_PIN)) { 
-    phases[0].configure(TRAFFIC_PELICAN, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
-    phases[1].configure(PED_PELICAN, 5,0,6,7,12);  // 0 - No Amber Pin
+    phases[0].configure(TRAFFIC_PELICAN, 2,3,4,0,0,false); // 0,0 No Demand light (wait), no Detector
+    phases[1].configure(PED_PELICAN, 5,0,6,7,12,true);  // 0 - No Amber Pin
   }
   else {
-    phases[0].configure(TRAFFIC_JUNCTION, 2,3,4,0,0); // 0,0 No Demand light (wait), no Detector
-    phases[1].configure(PED_JUNCTION, 5,0,6,7,12);  // 0 - No Amber Pin
+    phases[0].configure(TRAFFIC_JUNCTION, 2,3,4,0,0,false); // 0,0 No Demand light (wait), no Detector, No Demand
+    phases[1].configure(PED_JUNCTION, 5,0,6,7,12, true);  // 0 - No Amber Pin, PButton 7, Demanded on start-up
   }
   
   phases[1].setMinTimes(PHASE_GREEN,5);
@@ -64,8 +64,11 @@ void setup() {
   phases[1].setMinTimes(PHASE_PRE_GREEN,2);  // Crude intergreen
   
   // Insert a change to pedestrain phase on start-up
-  phases[0].phase_change_set(PHASE_CHANGE_TO_RED);
-  phases[1].phase_change_set(PHASE_CHANGE_TO_GREEN);  
+  // Set flash amber, flashing green man or equal 
+  phases[0].phase_change_set(PHASE_CHANGE_TO_GREEN);  
+  phases[1].phase_change_set(PHASE_CHANGE_TO_RED);  
+  phases[0].state_set(PHASE_POST_RED);
+  phases[1].state_set(PHASE_POST_GREEN);
 
   setup_interrupts();
   pinMode(HEARTBEAT_PIN, OUTPUT);

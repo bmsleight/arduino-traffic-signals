@@ -126,13 +126,14 @@ class Ats_phase {
   public:
     Ats_phase();
     ~Ats_phase();
-    void configure(unsigned char type, int red, int amber, int green, int demand_pin, int detector_pin);
+    void configure(unsigned char type, int red, int amber, int green, int demand_pin, int detector_pin, bool demand);
     void setMinTimes(int phase_step, int min);
     void tick(int millseconds);
     void detect();
     void phase_change_set(unsigned char state);
     unsigned char phase_change_return();
     unsigned char state();
+    void state_set(unsigned char state);
     bool ran_min_green();
     bool demanded();
     bool debug_to_serial;
