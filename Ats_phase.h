@@ -68,6 +68,7 @@
 #define A_OFF__ 0
 #define A_ON___ 1
 #define A_FLASH 2
+#define A_POLARITY 1
 
 /* Phase types */
 #define PHASE_TYPES 4

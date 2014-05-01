@@ -207,19 +207,19 @@ void Ats_phase::_set_pin_output(int p, unsigned char aspect_state) {
   if (p != 0) {
     switch (aspect_state) {
       case A_ON___:
-        digitalWrite(p, A_ON___);
+        digitalWrite(p, A_ON___ ^ A_POLARITY);
         break;
       case A_FLASH:
         // Always starts flashing cycle with an ON.
         if ((_time_on_current_state_milliseconds % (FLASH_AFTER_HEARTBEATS*HEARTBEAT_MILLS*2))<(FLASH_AFTER_HEARTBEATS*HEARTBEAT_MILLS)) {
-          digitalWrite(p, A_ON___);
+          digitalWrite(p, A_ON___ ^ A_POLARITY);
         }
         else {
-          digitalWrite(p, A_OFF__);
+          digitalWrite(p, A_OFF__ ^ A_POLARITY);
         }
         break;
       case A_OFF__:
-        digitalWrite(p, A_OFF__);
+        digitalWrite(p, A_OFF__ ^ A_POLARITY);
         break;
     }
   }
