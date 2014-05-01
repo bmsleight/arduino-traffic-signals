@@ -21,8 +21,7 @@
  
 #include <Ats_phase.h>
 
-volatile long tick_count = 0;
-volatile bool flash = true;
+
 #define HEARTBEAT_PIN 13
 #define MODE_SELECT_PIN 12
 
@@ -33,6 +32,11 @@ volatile bool flash = true;
 #define TOTAL_PHASES 2
 Ats_phase phases[TOTAL_PHASES];
 
+
+volatile long tick_count = 0;
+volatile bool flash = true;
+volatile bool illuminate = false;
+volatile long ticks_since_detect = 0;
 
 void setup() {
   if (DEBUG_TO_SERIAL_BAUD_RATE) {
@@ -69,6 +73,9 @@ void setup() {
   phases[1].phase_change_set(PHASE_CHANGE_TO_RED);  
   phases[0].state_set(PHASE_POST_RED);
   phases[1].state_set(PHASE_POST_GREEN);
+
+//  phases[0].illuminate(true);
+//  phases[1].illuminate(true);
 
   setup_interrupts();
   pinMode(HEARTBEAT_PIN, OUTPUT);
@@ -111,7 +118,18 @@ void heartbeat() {
     tick_count = 0;
     flash = !flash;
     digitalWrite(HEARTBEAT_PIN, flash);
+    ticks_since_detect ++;
   }
+  if(TICKS_UNTIL_SLEEP != 0 && ticks_since_detect > TICKS_UNTIL_SLEEP) {
+    illuminate = false;
+  }
+  else {    
+    illuminate = true;
+  }
+  for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
+    phases[p].illuminate(illuminate);
+  }
+  
 }
 
 void phase_changes() {
@@ -150,7 +168,9 @@ void decide_movements() {
 
 void interupt_demands() {
   for (unsigned char p = 0; p < TOTAL_PHASES; p++) {  
-    phases[p].detect();
+    if(phases[p].detect()) {
+      ticks_since_detect = 0;
+    }
   }
 }
 

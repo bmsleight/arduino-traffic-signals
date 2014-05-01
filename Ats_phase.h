@@ -130,11 +130,12 @@ class Ats_phase {
     void configure(unsigned char type, int red, int amber, int green, int demand_pin, int detector_pin, bool demand);
     void setMinTimes(int phase_step, int min);
     void tick(int millseconds);
-    void detect();
+    bool detect();
     void phase_change_set(unsigned char state);
     unsigned char phase_change_return();
     unsigned char state();
     void state_set(unsigned char state);
+    void illuminate(bool i);
     bool ran_min_green();
     bool demanded();
     bool debug_to_serial;
@@ -150,6 +151,7 @@ class Ats_phase {
     unsigned long _time_on_current_state_milliseconds;
     int _min_times[PHASE_STEPS];
     bool _demand;
+    bool _illuminate; // Lamp on or off
 
     /* Wiring to pins */
     int _aspect_pins[3] ; // RAG

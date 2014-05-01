@@ -27,6 +27,7 @@ Ats_phase::Ats_phase() {
   _time_since_green_milliseconds = 0;
   _phase_change = PHASE_CHANGE_NONE;
   _state = PHASE_RED; // Start on RED
+  _illuminate = false;
   _demand = false;
   debug_to_serial = false;
 }
@@ -104,6 +105,10 @@ void Ats_phase::state_set(unsigned char state){
 }
 
 
+void Ats_phase::illuminate(bool i) {
+  _illuminate = i;
+}
+
 
 bool Ats_phase::ran_min_green() {
   if((_time_on_green_milliseconds/1000)>=_min_times[PHASE_GREEN]) {
@@ -114,7 +119,7 @@ bool Ats_phase::ran_min_green() {
   }
 }
 
-void Ats_phase::detect()  {
+bool Ats_phase::detect()  {
   // Can not be detected if aleady at green
   // or of there is a demand pin to read from
   if ((_state != PHASE_GREEN) && (_detector_pin !=0) ) {
@@ -122,6 +127,7 @@ void Ats_phase::detect()  {
       _demand = true;
     }
   }
+  return _demand;
 }
 
 
@@ -195,16 +201,16 @@ void Ats_phase::_set_outputs() {
     _set_pin_output(_aspect_pins[pins], aspect_state);
   }
   if (_demand == true) {
-    _set_pin_output(_demand_green_pin, A_ON___);
+    _set_pin_output(_demand_green_pin, A_ON___ );
   }
   else {
-    _set_pin_output(_demand_green_pin, A_OFF__);
+    _set_pin_output(_demand_green_pin, A_OFF__ );
   }
 }
 
 
 void Ats_phase::_set_pin_output(int p, unsigned char aspect_state) {
-  if (p != 0) {
+  if (p != 0 && _illuminate) {
     switch (aspect_state) {
       case A_ON___:
         digitalWrite(p, A_ON___ ^ A_POLARITY);
@@ -212,7 +218,7 @@ void Ats_phase::_set_pin_output(int p, unsigned char aspect_state) {
       case A_FLASH:
         // Always starts flashing cycle with an ON.
         if ((_time_on_current_state_milliseconds % (FLASH_AFTER_HEARTBEATS*HEARTBEAT_MILLS*2))<(FLASH_AFTER_HEARTBEATS*HEARTBEAT_MILLS)) {
-          digitalWrite(p, A_ON___ ^ A_POLARITY);
+          digitalWrite(p, A_ON___ ^ A_POLARITY );
         }
         else {
           digitalWrite(p, A_OFF__ ^ A_POLARITY);
@@ -222,6 +228,9 @@ void Ats_phase::_set_pin_output(int p, unsigned char aspect_state) {
         digitalWrite(p, A_OFF__ ^ A_POLARITY);
         break;
     }
+  }
+  if (p != 0 && !_illuminate) {
+    digitalWrite(p, A_POLARITY);
   }
 }
 
