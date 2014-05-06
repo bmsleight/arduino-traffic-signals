@@ -104,6 +104,13 @@ void Ats_phase::state_set(unsigned char state){
   _state = state;
 }
 
+void Ats_phase::state_reset_time(){
+  // Dont want state to be public
+  _time_on_green_milliseconds = 0;
+  _time_on_current_state_milliseconds = 0;
+  _time_since_green_milliseconds = 0;
+}
+
 
 void Ats_phase::illuminate(bool i) {
   _illuminate = i;
